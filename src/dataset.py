@@ -5,8 +5,7 @@ import torchaudio as ta
 import numpy as np
 import pandas as pd
 import sofa
-from src.utils import cart2sph, hrir2itd, sph2cart
-import sys
+from src.utils import cart2sph, sph2cart
 from icecream import ic
 ic.configureOutput(includeContext=True)
 # ic.disable()
@@ -188,7 +187,7 @@ class HRTFDataset:
                         #     val = mag2db(th.abs(self.Data['train'][data_kind][db_name]))/20
                         # else:
                         val = self.Data["train"][data_kind][db_name]
-                        # ic(val.shape)
+                        ic(val.shape)
 
                         # print(f'[{data_kind}-{db_name}] mean:{th.mean(val):.4}, std:{th.std(val):.4}') 
                         # TODO: this changed
