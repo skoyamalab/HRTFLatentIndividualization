@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
-from icecream import ic
 import numpy as np
 from multidataset import MultiDataset
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import KFold, LeaveOneOut
-from torch.utils.tensorboard import SummaryWriter # tensorboard
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-
 
 import os
 
@@ -19,169 +17,7 @@ from configs import * # configs
 
 output_dir = "./outputs/out_20240918_FIAE_500239/"
 
-# --- Helper FiLM Layer ---
-class FiLMLayer(nn.Module):
-    """
-    Applies Feature-wise Linear Modulation.
-    Uses a conditioning embedding to predict scale and shift parameters,
-    which are then applied to the input feature map.
-    """
-    def __init__(self, feature_channels: int, embedding_dim: int):
-        """
-        Args:
-            feature_channels: Number of channels in the input feature map (C)
-                              that will be modulated.
-            embedding_dim: Dimension of the conditioning embedding (EmbDim).
-        """
-        super().__init__()
-        # MLP to predict scale (gamma) and shift (beta)
-        # Takes the conditioning embedding and outputs 2*C parameters
-        self.generator = nn.Linear(embedding_dim, 2 * feature_channels)
-        # Initialize the generator's final layer weights/bias to zero
-        # So initially gamma=1, beta=0 (identity transform)
-        nn.init.zeros_(self.generator.weight)
-        nn.init.zeros_(self.generator.bias)
-
-    def forward(self, x: torch.Tensor, cond_embedding: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Input tensor to be modulated (e.g., shape [BatchSize, Channels]).
-               In this MLP case, BatchSize corresponds to 2*L.
-            cond_embedding: Conditioning embedding tensor (e.g., shape [BatchSize, EmbDim]).
-                            Should have the same BatchSize as x.
-
-        Returns:
-            Modulated tensor with the same shape as x.
-        """
-        # Generate scale (gamma) and shift (beta) parameters
-        gamma_beta = self.generator(cond_embedding) # Shape: [BatchSize, 2 * Channels]
-
-        # Split into gamma and beta
-        gamma, beta = torch.chunk(gamma_beta, 2, dim=-1) # Shape: [BatchSize, Channels] each
-
-        # Apply FiLM: output = x * gamma + beta
-        # Note: We initialize generator bias to 0, so beta starts at 0.
-        # We initialize generator weight to 0, so gamma starts at 0.
-        # To make gamma start around 1 (identity scaling), we add 1.
-        return x * (gamma + 1) + beta
-
-# --- Latent MLP with FiLM ---
-class LatentMLP_FiLM(nn.Module):
-    def __init__(self, anthro_dim=23, num_freq_features=16, subj_emb_dim=64, output_dim=64, dropout_rate=0.2):
-        """
-        MLP to predict latent vectors, conditioned on anthropometry and frequency
-        using FiLM layers for frequency conditioning.
-
-        Args:
-            anthro_dim: Dimension of the input anthropometric features per ear.
-            num_freq_features: Number of base features for Fourier Feature Mapping.
-            subj_emb_dim: Dimension of the intermediate subject/ear embedding.
-            output_dim: Dimension of the output latent vector (d).
-            dropout_rate: Dropout probability.
-        """
-        super().__init__()
-        self.output_dim = output_dim
-        self.freq_emb_dim = 2 * num_freq_features
-
-        # 1. Frequency Feature Mapping
-        self.freq_ids = (torch.arange(128+1)[1:]/128).unsqueeze(-1) # (128, 1)
-        self.ffm_freq = FourierFeatureMapping(
-            num_features=num_freq_features,
-            dim_data=1,
-            trainable=True
-        )
-
-        # 2. Anthropometry Embedding MLP
-        # Processes the per-ear anthropometry features into a subject embedding
-        self.anthro_mlp = nn.Sequential(
-            nn.Linear(anthro_dim, subj_emb_dim * 2),
-            nn.LayerNorm(subj_emb_dim * 2),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(subj_emb_dim * 2, subj_emb_dim)
-            # Output shape: (2, subj_emb_dim)
-        )
-
-        # 3. Main MLP Pathway (processes subject embedding)
-        # We will insert FiLM layers to modulate activations based on frequency
-        hidden_dims = [128, 256, 128] # Define hidden dimensions for the main path
-
-        # Input layer for the main path
-        self.main_linear_in = nn.Linear(subj_emb_dim, hidden_dims[0])
-        self.main_norm_in = nn.LayerNorm(hidden_dims[0])
-        self.main_act_in = nn.ReLU()
-        self.main_dropout_in = nn.Dropout(dropout_rate)
-        # FiLM layer to apply after the first activation
-        self.film1 = FiLMLayer(feature_channels=hidden_dims[0], embedding_dim=self.freq_emb_dim)
-
-        # Hidden layers
-        self.main_hidden_layers = nn.ModuleList()
-        self.film_layers = nn.ModuleList() # Store FiLM layers separately
-        current_dim = hidden_dims[0]
-        for i, hidden_dim in enumerate(hidden_dims[1:]):
-            self.main_hidden_layers.append(nn.Linear(current_dim, hidden_dim))
-            self.main_hidden_layers.append(nn.LayerNorm(hidden_dim))
-            self.main_hidden_layers.append(nn.ReLU())
-            self.main_hidden_layers.append(nn.Dropout(dropout_rate))
-            # Add a FiLM layer corresponding to this hidden block
-            self.film_layers.append(FiLMLayer(feature_channels=hidden_dim, embedding_dim=self.freq_emb_dim))
-            current_dim = hidden_dim
-
-        # Output layer
-        self.main_linear_out = nn.Linear(current_dim, output_dim)
-
-    def forward(self, x_in):
-        """
-        Args:
-            x_in: A tuple containing:
-                  - freq_ids: Tensor of frequency IDs, shape (L=128, 1)
-                  - anthro_features: Tensor of normalized anthropometric features, shape (2, anthro_dim)
-
-        Returns:
-            Predicted latent vectors, shape (2L, output_dim)
-        """
-        anthro_features = x_in
-        self.freq_ids = self.freq_ids.to(anthro_features.device)
-
-        # --- Prepare Embeddings ---
-        # Calculate frequency embeddings for L bins
-        freq_embs = self.ffm_freq(self.freq_ids) # Shape: (L, freq_emb_dim)
-        # Repeat/stack for left and right ears (simple concatenation)
-        freq_embs_repeated = torch.cat([freq_embs, freq_embs], dim=0) # Shape: (2L, freq_emb_dim)
-
-        # Calculate subject/ear embeddings
-        subj_emb = self.anthro_mlp(anthro_features) # Shape: (2, subj_emb_dim)
-        # Repeat subject embedding for each frequency bin
-        # repeat_interleave(L, dim=0) repeats [e1, e2] -> [e1]*L + [e2]*L
-        subj_emb_repeated = subj_emb.repeat_interleave(self.freq_ids.shape[0], dim=0) # Shape: (2L, subj_emb_dim)
-
-        # --- Pass through Main MLP with FiLM ---
-        # Input block
-        # ic(subj_emb_repeated.device, freq_embs_repeated.device)
-        h = self.main_linear_in(subj_emb_repeated)
-        h = self.main_norm_in(h)
-        h = self.main_act_in(h)
-        h = self.main_dropout_in(h)
-        # Apply first FiLM modulation
-        h = self.film1(h, freq_embs_repeated)
-
-        # Hidden blocks
-        film_layer_idx = 0
-        for i in range(0, len(self.main_hidden_layers), 4): # Process in chunks of Linear, Norm, Act, Dropout
-            h = self.main_hidden_layers[i](h)   # Linear
-            h = self.main_hidden_layers[i+1](h) # LayerNorm
-            h = self.main_hidden_layers[i+2](h) # ReLU
-            h = self.main_hidden_layers[i+3](h) # Dropout
-            # Apply corresponding FiLM modulation
-            h = self.film_layers[film_layer_idx](h, freq_embs_repeated)
-            film_layer_idx += 1
-
-        # Output layer
-        output_latents = self.main_linear_out(h) # Shape: (2L, output_dim)
-
-        return output_latents
-
-class LatentMLP(nn.Module):
+class ProtoDNN(nn.Module):
     def __init__(self, anthro_dim=23, num_freq_features=16, output_dim=64, dropout_rate=0.3):
         super().__init__()
 
@@ -204,12 +40,10 @@ class LatentMLP(nn.Module):
                 self.layers.append(nn.Dropout(dropout_rate))
 
     def forward(self, x):
-        # ic(freq_embs.shape, anthro_features.shape)
         freq_embs = self.ffm_freq(self.freq_ids.to(x.device)).repeat(2, 1)  # (2L, 2 * num_freq_features)
         anthro_features = x.repeat(1, 128).reshape(-1, x.size(-1)) # (2L, 23)
         x = torch.cat([freq_embs, anthro_features], dim=-1) # (S, 2 * num_freq_features + anthro_dim = 32 + 23)
 
-        # ic(freq_embs.shape, anthro_features.shape, x.shape)
         for layer in self.layers:
             x = layer(x)
         
@@ -220,7 +54,6 @@ def compute_latent_stats(encoder, dataloader, device):
 
     encoder.eval()
     with torch.no_grad():
-        # for batch in tqdm(dataloader, desc="Encoding latents"):
         for batch in dataloader:
             batch = {data_kind: (batch[data_kind].to(device) if isinstance(batch[data_kind], torch.Tensor) else batch[data_kind]) for data_kind in batch}
             data_copy = {data_kind: batch[data_kind] for data_kind in batch}
@@ -235,12 +68,10 @@ def compute_latent_stats(encoder, dataloader, device):
     mean = all_latents.mean(dim=0, keepdim=True).view(-1, latents_batch.size(-1)).repeat(2, 1)  # shape: (2L, d)
     std = all_latents.std(dim=0, keepdim=True).view(-1, latents_batch.size(-1)).repeat(2, 1)  # shape: (2L, d)
 
-    # ic(all_latents.shape, mean.shape, std.shape)
     return mean, std
 
 def init_model(dropout_rate, device):
-    # model = LatentMLP_FiLM(dropout_rate=dropout_rate).to(device)
-    model = LatentMLP(dropout_rate=dropout_rate).to(device)
+    model = ProtoDNN(dropout_rate=dropout_rate).to(device)
 
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
@@ -653,9 +484,6 @@ if __name__ == '__main__':
     train_db_names = ['CIPIC', 'HUTUBS']
     test_db_names = ['CIPIC']
     encoders = load_nets('_'.join(train_db_names), devices=devices)
-
-    # learning_rates = [1e-4, 3e-4, 5e-4, 1e-3]
-    # weight_decays = [1e-4, 1e-3]
     
     save_prefix = output_dir + "personalization/latent_MLP/" + '_'.join(test_db_names) + '/' + '_'.join(train_db_names) + '/'
     os.makedirs(save_prefix, exist_ok=True)
@@ -688,12 +516,12 @@ if __name__ == '__main__':
     train_dataset = MultiDataset(train_db_names, phase='train')
     test_dataset = MultiDataset(test_db_names, phase='test')
 
-    # _, cv_results = cross_validation(train_dataset, encoders, training_configs)
+    _, cv_results = cross_validation(train_dataset, encoders, training_configs)
     
-    # print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
-    # training_configs["num_epochs"] = cv_results["avg_last_epoch"]
+    print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
+    training_configs["num_epochs"] = cv_results["avg_last_epoch"]
     
-    # training_configs["num_epochs"] = 46
+    # training_configs["num_epochs"] = 0
     test_losses, lsd_losses, recon_losses = test_model(train_dataset, test_dataset, encoders[0], training_configs)
     print(f"Avg Test Loss: {np.mean(test_losses):.6f} ± {np.std(test_losses):.6f}")
     print(f"Avg Test LSD: {np.mean(lsd_losses):.4f} ± {np.std(lsd_losses):.4f}")

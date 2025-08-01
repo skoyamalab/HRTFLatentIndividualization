@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
-from icecream import ic
 import numpy as np
 from multidataset import MultiDataset
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import KFold, LeaveOneOut
-from torch.utils.tensorboard import SummaryWriter # tensorboard
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 import os
@@ -15,7 +14,7 @@ from losses import LSD
 from utils import plot_mag_Angle_vs_Freq
 output_dir = "./outputs/out_20240918_FIAE_500239/"
 
-class SimpleMLP(nn.Module):
+class DirectDNN(nn.Module):
     def __init__(self, source_dim, input_dim=23, dropout_rate=0.4):
         super().__init__()
         self.source_dim = source_dim
@@ -39,7 +38,7 @@ class SimpleMLP(nn.Module):
         return x.view(-1, self.source_dim, 2, 128)
 
 def init_model(source_dim, dropout_rate, device):
-    model = SimpleMLP(source_dim, dropout_rate=dropout_rate).to(device)
+    model = DirectDNN(source_dim, dropout_rate=dropout_rate).to(device)
 
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
@@ -388,7 +387,7 @@ if __name__ == '__main__':
         "dropout_rate": 0.5,
         "num_epochs": 300,
         "patience": 5,
-        "lr_patience": 15, # not triggered
+        "lr_patience": 15, # intentionally not triggered
         "lr_factor": 0.8,
         "lr_min": 0,
         #========== metric logging ===========
@@ -403,11 +402,11 @@ if __name__ == '__main__':
     train_dataset = MultiDataset([db_name], phase='train')
     test_dataset = MultiDataset([db_name], phase='test')
 
-    # _, cv_results = cross_validation(train_dataset, training_configs)
+    _, cv_results = cross_validation(train_dataset, training_configs)
     
-    # print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
-    # training_configs["num_epochs"] = cv_results["avg_last_epoch"]
+    print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
+    training_configs["num_epochs"] = cv_results["avg_last_epoch"]
     
-    training_configs["num_epochs"] = 0
+    # training_configs["num_epochs"] = 0
     test_losses = test_model(train_dataset, test_dataset, training_configs)
     print(f"Avg Test LSD: {np.mean(test_losses):.4f} ± {np.std(test_losses):.4f}")

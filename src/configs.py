@@ -1,8 +1,7 @@
 from numpy import False_
 
 config_FIAE_500239 = {
-    # "database": ['CHEDAR', 'HUTUBS', 'CIPIC'],
-    "database": ["HUTUBS"],
+    "database": ["HUTUBS"], # ['CHEDAR', 'HUTUBS', 'CIPIC']
     "sub_index": {
         "CIPIC": {
             "train": range(0, 33),  # 32

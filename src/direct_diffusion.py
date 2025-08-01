@@ -5,12 +5,12 @@ from icecream import ic
 import numpy as np
 from transformers import get_scheduler
 
-from direct_unet import ConditionalUNet1DDDM
+from unet import DirectUNet
 from ddim import DDIMScheduler
 from multidataset import MultiDataset
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import KFold, LeaveOneOut
-from torch.utils.tensorboard import SummaryWriter # tensorboard
+from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 
 import os
@@ -129,7 +129,7 @@ def test_generation(model, scheduler, condition_embeddings, hrtf_mag_shape, guid
 
 
 def init_model(device, deterministic=True):
-    model = ConditionalUNet1DDDM(deterministic=deterministic).to(device)
+    model = DirectUNet(deterministic=deterministic).to(device)
 
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
@@ -545,7 +545,7 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    train_db_names = ['CIPIC', 'HUTUBS']
+    train_db_names = ['CIPIC']
     test_db_names = ['CIPIC']
     
     save_prefix = output_dir + "personalization/direct_diffusion/" + '_'.join(test_db_names) + '/' + '_'.join(train_db_names) + '/'
@@ -578,12 +578,12 @@ if __name__ == '__main__':
     train_dataset = MultiDataset(train_db_names, phase='train')
     test_dataset = MultiDataset(test_db_names, phase='test')
 
-    # _, cv_results = cross_validation(train_dataset, training_configs)
+    _, cv_results = cross_validation(train_dataset, training_configs)
     
-    # print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
-    # training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
+    print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
+    training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
     
-    training_configs["num_test_epochs"] = 0
+    # training_configs["num_test_epochs"] = 0
     test_losses, lsd_losses = test_model(train_dataset, test_dataset, training_configs)
     print(f"Avg Test Loss: {np.mean(test_losses):.6f} ± {np.std(test_losses):.6f}")
     print(f"Avg Test LSD: {np.mean(lsd_losses):.4f} ± {np.std(lsd_losses):.4f}")

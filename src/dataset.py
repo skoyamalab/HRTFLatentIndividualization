@@ -7,7 +7,7 @@ import pandas as pd
 import sofa
 from src.utils import cart2sph, sph2cart
 from icecream import ic
-ic.configureOutput(includeContext=True)
+# ic.configureOutput(includeContext=True)
 # ic.disable()
 
 class HRTFDataset:

@@ -5,12 +5,12 @@ from icecream import ic
 import numpy as np
 from transformers import get_scheduler
 
-from latent_unet import ConditionalUNet1DLDM
+from unet import ProtoUNet
 from ddim import DDIMScheduler
 from multidataset import MultiDataset
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import KFold, LeaveOneOut
-from torch.utils.tensorboard import SummaryWriter # tensorboard
+from torch.utils.tensorboard import SummaryWriter
 from tqdm.auto import tqdm
 
 
@@ -24,7 +24,7 @@ from configs import * # configs
 output_dir = "./outputs/out_20240918_FIAE_500239/"
 
 def init_model(device, deterministic=True):
-    model = ConditionalUNet1DLDM(deterministic=deterministic).to(device)
+    model = ProtoUNet(deterministic=deterministic).to(device)
 
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
@@ -176,7 +176,6 @@ def test_generation(model, scheduler, condition_embeddings, guidance_scale=7.5, 
 
     # (2, 64, 128): 1 left, 1 right
     return denoised_latents
-
 
 
 def train_1ep(model, train_dataloader, optimizer, criterion, encoder, scheduler, anthro_standardize, latent_standardize, device):
@@ -527,7 +526,6 @@ def cross_validation(train_dataset, encoders, training_configs):
     return results, results_summary
 
 
-
 if __name__ == '__main__':
     # Check device availability
     if torch.cuda.is_available():
@@ -538,7 +536,7 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    train_db_names = ['CIPIC', 'HUTUBS']
+    train_db_names = ['CIPIC']
     test_db_names = ['CIPIC']
     encoders = load_nets('_'.join(train_db_names), devices=devices)
 
@@ -578,7 +576,7 @@ if __name__ == '__main__':
     # print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
     # training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
     
-    training_configs["num_test_epochs"] = 0
+    training_configs["num_test_epochs"] = 158
     test_losses, lsd_losses, recon_losses = test_model(train_dataset, test_dataset, encoders[0], training_configs)
     print(f"Avg Test Loss: {np.mean(test_losses):.6f} ± {np.std(test_losses):.6f}")
     print(f"Avg Test LSD: {np.mean(lsd_losses):.4f} ± {np.std(lsd_losses):.4f}")
