@@ -536,8 +536,8 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    train_db_names = ['CIPIC']
-    test_db_names = ['CIPIC']
+    train_db_names = ['HUTUBS']
+    test_db_names = ['HUTUBS']
     encoders = load_nets('_'.join(train_db_names), devices=devices)
 
     # learning_rates = [1e-4, 3e-4, 5e-4, 1e-3]
@@ -571,12 +571,12 @@ if __name__ == '__main__':
     train_dataset = MultiDataset(train_db_names, phase='train')
     test_dataset = MultiDataset(test_db_names, phase='test')
 
-    # _, cv_results = cross_validation(train_dataset, encoders, training_configs)
+    _, cv_results = cross_validation(train_dataset, encoders, training_configs)
     
-    # print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
-    # training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
+    print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
+    training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
     
-    training_configs["num_test_epochs"] = 158
+    # training_configs["num_test_epochs"] = 158
     test_losses, lsd_losses, recon_losses = test_model(train_dataset, test_dataset, encoders[0], training_configs)
     print(f"Avg Test Loss: {np.mean(test_losses):.6f} ± {np.std(test_losses):.6f}")
     print(f"Avg Test LSD: {np.mean(lsd_losses):.4f} ± {np.std(lsd_losses):.4f}")

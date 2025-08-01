@@ -481,8 +481,8 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    train_db_names = ['CIPIC', 'HUTUBS']
-    test_db_names = ['CIPIC']
+    train_db_names = ['HUTUBS']
+    test_db_names = ['HUTUBS']
     encoders = load_nets('_'.join(train_db_names), devices=devices)
     
     save_prefix = output_dir + "personalization/latent_MLP/" + '_'.join(test_db_names) + '/' + '_'.join(train_db_names) + '/'

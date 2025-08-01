@@ -284,8 +284,8 @@ def test_model(train_dataset, test_dataset, training_configs):
         if train_loss < best_train_loss:
             best_train_loss = train_loss
             curr_patience = training_configs["patience"]
-            if best_train_loss < 0.03:
-                torch.save(model.state_dict(), save_file_dir + "best.pth")
+            # if best_train_loss < 0.20:
+            torch.save(model.state_dict(), save_file_dir + "best.pth")
         else:
             curr_patience -= 1
             if curr_patience <= 0:
@@ -545,8 +545,8 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    train_db_names = ['CIPIC']
-    test_db_names = ['CIPIC']
+    train_db_names = ['HUTUBS']
+    test_db_names = ['HUTUBS']
     
     save_prefix = output_dir + "personalization/direct_diffusion/" + '_'.join(test_db_names) + '/' + '_'.join(train_db_names) + '/'
     os.makedirs(save_prefix, exist_ok=True)
@@ -583,7 +583,7 @@ if __name__ == '__main__':
     print(f'Setting num_epochs to {cv_results["avg_last_epoch"]} based on cross-validation results.')
     training_configs["num_test_epochs"] = cv_results["avg_last_epoch"]
     
-    # training_configs["num_test_epochs"] = 0
+    # training_configs["num_test_epochs"] = 147
     test_losses, lsd_losses = test_model(train_dataset, test_dataset, training_configs)
     print(f"Avg Test Loss: {np.mean(test_losses):.6f} ± {np.std(test_losses):.6f}")
     print(f"Avg Test LSD: {np.mean(lsd_losses):.4f} ± {np.std(lsd_losses):.4f}")

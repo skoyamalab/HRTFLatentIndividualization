@@ -1,5 +1,7 @@
 *
 !.gitignore
+!requirements.txt
+!README.md
 !src/
 !src/*.py
 !main.py

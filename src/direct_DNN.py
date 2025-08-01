@@ -365,7 +365,7 @@ if __name__ == '__main__':
         devices = [torch.device("cpu")]
         print("No GPU found, using CPU")
 
-    db_name = 'CIPIC'
+    db_name = 'HUTUBS'
 
     # learning_rates = [1e-4, 3e-4, 5e-4, 1e-3]
     # weight_decays = [1e-4, 1e-3]
