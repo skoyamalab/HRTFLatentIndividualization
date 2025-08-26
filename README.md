@@ -93,7 +93,7 @@ Tested on the following environment:
 ```
 
 ## License
-[CC-BY-4.0](https://github.com/ikets/FSP-AE/blob/main/LICENSE)
+[CC-BY-4.0](https://github.com/skoyamalab/HRTFLatentIndividualization/blob/main/LICENSE)
 
 ## References
 [1] Ryan Niu, Shoichi Koyama, and Tomohiko Nakamura, <strong>"Head-Related Transfer Function Individualization Using Anthropometric Features and Spatially Independent Latent Representation,"</strong> <em>IEEE WASPAA</em>, Oct., 2025. (accepted) [[Preprint](https://arxiv.org/abs/2508.16176)] <br>
