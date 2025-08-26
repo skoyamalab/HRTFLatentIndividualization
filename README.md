@@ -12,7 +12,7 @@ If you use this code in your experiments, please cite [1] in your work.
 ## System Requirements
 Tested on the following environment:
 - OS: Ubuntu 22.04, 24.04
-- GPU: NVIDIA RTX A5000 (24GB VRAM)
+- GPU: NVIDIA RTX A6000 Ada (48GB VRAM)
 - CUDA 12.4
 - Python 3.9
 
