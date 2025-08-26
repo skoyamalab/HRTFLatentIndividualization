@@ -175,13 +175,13 @@ config_FIAE_500239 = {
     "in_mag_pc": False,
     "out_mag_pc": False,
     "num_pc": 128,
-    # --- in/out latent --- PCAのかわり---
+    # --- in/out latent --- PCA ---
     "in_latent": False,
     "out_latent": False,
     "num_latents": 128,
     "hlayers_latents": 3,
     "channel_latents": 64,
-    # --- in/out cnn --- PCAのかわり---
+    # --- in/out cnn --- PCA ---
     "in_cnn": False,
     "out_cnn": False,
     "hlayers_cnn_pb": 1,  # layers/block (1block,1pooling)
@@ -191,7 +191,7 @@ config_FIAE_500239 = {
     "pooling_cnn": "stcv",  # ["max", "avg", "stcv"]
     "stride_cnn": 2,
     "channel_cnn": 16,
-    # --- in/out cnn_ch --- ch 方向に補間 --- 他パラメタは in/out cnn の所で設定
+    # --- in/out cnn_ch
     "in_cnn_ch": False,
     "out_cnn_ch": False,
     "use_freq_for_cnn_ch": False,
