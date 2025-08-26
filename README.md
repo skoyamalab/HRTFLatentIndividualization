@@ -1,6 +1,7 @@
 # HRTFLatentIndividualization
 [![python](https://img.shields.io/badge/-Python_3.9-blue?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3921/)
 [![pytorch](https://img.shields.io/badge/PyTorch_2.6-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/get-started/locally/)
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 This repository contains the official implementation of <strong>"Head-Related Transfer Function Individualization Using Anthropometric Features and Spatially Independent Latent Representation"</strong> in Proceedings of <em>IEEE Workshop on Applications of Signal Processing to Audio and Acoustics</em> [[Preprint](https://arxiv.org/abs/2508.16176)]. We propose a HRTF individualization method using the latent representation of HRTF magnitude obtained through an autoencoder conditioned on sound source positions, which makes it possible to combine multiple HRTF datasets with different measured source positions, and makes the network training tractable by reducing the number of parameters to be estimated from anthropometric parameters. Experimental evaluation shows that high estimation accuracy is achieved by the proposed method, compared to current DNN-based methods.
 
@@ -90,6 +91,9 @@ Tested on the following environment:
   note      = {(accepted)}
 }
 ```
+
+## License
+[CC-BY-4.0](https://github.com/ikets/FSP-AE/blob/main/LICENSE)
 
 ## References
 [1] Ryan Niu, Shoichi Koyama, and Tomohiko Nakamura, <strong>"Head-Related Transfer Function Individualization Using Anthropometric Features and Spatially Independent Latent Representation,"</strong> <em>IEEE WASPAA</em>, Oct., 2025. (accepted) [[Preprint](https://arxiv.org/abs/2508.16176)] <br>
