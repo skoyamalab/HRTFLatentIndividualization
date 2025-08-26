@@ -58,9 +58,9 @@ def arg_parse():
     parser.add_argument("-dbg","--debug", action="store_true", help="debug mode")
     parser.add_argument("-opt","--optuna", action="store_true", help="optimize hyper parameter by optuna")
     parser.add_argument("-start_ep","--start_ep", type=int, default=0,
-                        help="途中から学習を再開する場合")
+                        help="resume training at this epoch")
     parser.add_argument("-save_freq","--save_freq", type=int, default=250,
-                        help="何epごとにモデルを保存するか")
+                        help="save model after how many epochs")
     parser.add_argument("-mkdir", "--flg_mkdir", action="store_true", help="")
     args = parser.parse_args()
     return args
