@@ -262,7 +262,7 @@ class HRTFDataset:
         srcpos_ori = th.tensor(SOFA.Source.Position.get_values()) # azimuth in [0,360),elevation in [-90,90], radius in {1.47}
         srcpos_sph = srcpos_ori
         srcpos_sph[:,0] = srcpos_sph[:, 0] % 360 # azimuth in [0,360)
-        srcpos_sph[:,1] = 90 - srcpos_sph[:, 1] # elevation in [-90,90] -> zenith in [180,0] # "%180" は[0,180) にしてしまうのでダメ
+        srcpos_sph[:,1] = 90 - srcpos_sph[:, 1] # elevation in [-90,90] -> zenith in [180,0]
         srcpos_sph[:,:2] = srcpos_sph[:,:2] / 180 * np.pi # azimuth in [0,2*pi), zenith in [0,pi]
         if db_name == 'RIEC':
             srcpos_sph[:,2] = 1.5
@@ -288,7 +288,7 @@ class HRTFDataset:
             # HRIR_us = HRIR_us[:,:,HRIR_us.shape[-1]-2*filter_length:]
             HRIR_us = HRIR_us[:,:,:2*filter_length]
 
-        # FFT & conj(Mesh2HRTFに定義を揃える)
+        # FFT & conj(Mesh2HRTF)
         HRTF_pm = th.conj(th.fft.fft(HRIR_us, dim=-1))
         # Extract positive frequency
         HRTF = HRTF_pm[:,:,1:filter_length+1]
