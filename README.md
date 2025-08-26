@@ -79,10 +79,6 @@ Tested on the following environment:
 - You can modify the training configurations in the `main` method of each script. The provided values are the recommended defaults for each model.
 - The `save_prefix` and `training_configs` also allow you to specify where model artifacts, TensorBoard logs, and figures will be saved.
 
-## Other
-**Adding a new dataset:**
-- If you want to add a new dataset with anthropometric features, you will need to modify both `dataset.py` (for the autoencoder) and `multidataset.py` (for the individualization models) to support it. After that, you can update the configurations accordingly.
-
 ## Cite
 ```bibtex
 @article{Niu:WASPAA2025,
