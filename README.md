@@ -99,11 +99,9 @@ Tested on the following environment:
 [1] Ryan Niu, Shoichi Koyama, and Tomohiko Nakamura, <strong>"Head-Related Transfer Function Individualization Using Anthropometric Features and Spatially Independent Latent Representation,"</strong> <em>IEEE WASPAA</em>, Oct., 2025. (accepted) [[Preprint](https://arxiv.org/abs/2508.16176)] <br>
 <!-- vol. XX, pp. xxxx-xxxx, 2025.  [[PDF]]()  -->
 
-[2] Yuki Ito, Tomohiko Nakamura, Shoichi Koyama, Shuichi Sakamoto, and Hiroshi Saruwatari, <strong>"Spatial Upsampling of Head-Related Transfer Function Using Neural Network Conditioned on Source Position and Frequency,"</strong> <em>IEEE Open J. Signal Process.</em>, 2025.  (accepted) <br>
+[2] Duda, R.O. & Thompson, D.M. & Avendaño, Carlos. (2001). The CIPIC HRTF database. IEEE ASSP Workshop on Applications of Signal Processing to Audio and Acoustics. 99 - 102. 10.1109/ASPAA.2001.969552. 
 
-[3] Duda, R.O. & Thompson, D.M. & Avendaño, Carlos. (2001). The CIPIC HRTF database. IEEE ASSP Workshop on Applications of Signal Processing to Audio and Acoustics. 99 - 102. 10.1109/ASPAA.2001.969552. 
+[3] Fabian Brinkmann, Manoj Dinakaran, Robert Pelzer, Jan Joschka Wohlgemuth, Fabian Seipel, Daniel Voss, Peter Grosche, and Stefan Weinzierl, “The HUTUBS head-related transfer function (HRTF) database,” 2019, url: http://dx.doi.org/10.14279/depositonce-8487 (accessed May 6, 2022).<br>
 
-[4] Fabian Brinkmann, Manoj Dinakaran, Robert Pelzer, Jan Joschka Wohlgemuth, Fabian Seipel, Daniel Voss, Peter Grosche, and Stefan Weinzierl, “The HUTUBS head-related transfer function (HRTF) database,” 2019, url: http://dx.doi.org/10.14279/depositonce-8487 (accessed May 6, 2022).<br>
-
-[5] Kanji Watanabe, Yukio Iwaya, Yôiti Suzuki, Shouichi Takane, and Sojun Sato, “Dataset of head-related transfer functions measured with a circular loudspeaker array,” <em>Acoust. Sci. Tech.</em>, vol. 35, no. 3, pp. 159–165, 2014.<br>
+[4] Kanji Watanabe, Yukio Iwaya, Yôiti Suzuki, Shouichi Takane, and Sojun Sato, “Dataset of head-related transfer functions measured with a circular loudspeaker array,” <em>Acoust. Sci. Tech.</em>, vol. 35, no. 3, pp. 159–165, 2014.<br>
 
