@@ -82,22 +82,11 @@ config_FIAE_500239 = {
     "pln_smp_paral_values": [-0.735, 0, 0.735],
     "use_own_hrtf_test": False,
     "own_hrtf_sub_name": [
-        "ito_yuki",
-        "shigemi_kazuhide",
-        "koyama_shoichi",
-        "ueno_natsuki",
-        "iijima_naoto",
-    ]
-    + ["imamura_kanami", "kitamura_makito", "seki_kentaro", "yamano_kota"]
-    + [
-        "arai_kohei",
-        "kitamura_kota",
-        "kuribayashi_masaki",
-        "matsuoka_hiroyasu",
-        "okita_ayumu",
-        "takemoto_wataru",
-        "watanabe_yuki",
-    ],  # ['ito', 'shigemi', 'koyama', 'ueno', 'iijima'],
+        "sub_name_01",
+        "sub_name_02",
+        "sub_name_03",
+        "sub_name_04",
+    ],
     "use_mit_kemar_test": False,
     # - - - -
     "reg_mat_base": "duraiswami",  # duraiswami, identity
